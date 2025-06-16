@@ -1,0 +1,56 @@
+[
+    {
+      "model": "orders.product",
+      "pk": 1,
+      "fields": {
+        "name": "Laptop ASUS TUF Gaming F15 FX507ZC4-HN083",
+        "price": 32999.00,
+        "created_at": "2023-06-15T10:00:00Z"
+      }
+    },
+    {
+      "model": "orders.product",
+      "pk": 2,
+      "fields": {
+        "name": "Smartphone Samsung Galaxy A36 5G 8/256GB Awesome Black",
+        "price": 14799.00,
+        "created_at": "2023-08-20T10:00:00Z"
+      }
+    },
+    {
+      "model": "orders.product",
+      "pk": 3,
+      "fields": {
+        "name": "Tablet Samsung Galaxy Tab A9 Plus Wi-Fi 8/128GB Graphite",
+        "price": 8559.00,
+        "created_at": "2023-09-10T10:00:00Z"
+      }
+    },
+    {
+      "model": "orders.product",
+      "pk": 4,
+      "fields": {
+        "name": "Laptop ASUS Vivobook 16X K3605ZF-RP567 (90NB11E1-M01830) Indie Black",
+        "price": 27999.00,
+        "created_at": "2023-10-05T10:00:00Z"
+      }
+    },
+    {
+      "model": "orders.product",
+      "pk": 5,
+      "fields": {
+        "name": "Smartphone Xiaomi Redmi Note 14 8/256GB Midnight Black",
+        "price": 7499.00,
+        "created_at": "2023-11-15T10:00:00Z"
+      }
+    },
+    {
+      "model": "orders.product",
+      "pk": 6,
+      "fields": {
+        "name": "Tablet Lenovo Tab M11 Wi-Fi 4/128GB Seafoam Green (ZADA0259UA)",
+        "price": 5999.00,
+        "created_at": "2023-12-01T10:00:00Z"
+      }
+    }
+  ]
