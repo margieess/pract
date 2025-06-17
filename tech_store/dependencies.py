@@ -2,13 +2,18 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 from . import models, schemas
 from .database import SessionLocal
+import os
 
-SECRET_KEY = "u8P4B0xqVWfl3NyZsQ7RL5Mdn1tXH9EwKJeOcvgrDZAhpIUR"
-ALGORITHM = "HS256"
+
+# Завантажуємо змінні з .env
+
+
+SECRET_KEY = os.getenv("SECRET_KEY", "u8P4B0xqVWfl3NyZsQ7RL5Mdn1tXH9EwKJeOcvgrDZAhpIUR")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -21,8 +26,7 @@ def get_db():
         db.close()
 
 def verify_password(plain_password: str, hashed_password: str):
-    # ВНИМАНИЕ! Здесь нет хеширования, plain сравнение пароля.
-    return plain_password == hashed_password
+    return plain_password == hashed_password  # plain text comparison
 
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(models.User).filter(models.User.username == username).first()
@@ -32,9 +36,9 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timezone] = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timezone(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -58,7 +62,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 async def get_current_active_user(current_user: models.User = Depends(get_current_user)):
-    if current_user.is_active == 0:
+    if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 

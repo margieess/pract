@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+# ---------- PRODUCTS ----------
 class ProductBase(BaseModel):
     name: str
     price: float
@@ -13,22 +14,24 @@ class Product(ProductBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+# ---------- USERS ----------
 class UserBase(BaseModel):
     username: str
     role: str
 
 class UserCreate(UserBase):
-    password: str  # plain password here
+    password: str  # plain text password
 
 class User(UserBase):
     id: int
-    is_active: Optional[int]
+    is_active: Optional[bool]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+# ---------- ORDERS ----------
 class OrderBase(BaseModel):
     product_id: int
 
@@ -45,40 +48,36 @@ class Order(OrderBase):
     consultant_id: Optional[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
-class InvoiceBase(BaseModel):
+# ---------- INVOICES ----------
+class InvoiceCreate(BaseModel):
     order_id: int
+    # total_amount: Optional[float] = None  # Додайте, якщо потрібно передавати суму
 
-class InvoiceCreate(InvoiceBase):
-    pass
-
-class Invoice(InvoiceBase):
-    id: int
-    total_amount: float
-    issued_at: datetime
-    product_name: str
-    product_price: float
-    order_created_at: datetime
-
-    class Config:
-        orm_mode = True
-
-
-class InvoiceResponse(BaseModel):
+class Invoice(BaseModel):
     id: int
     order_id: int
-    total_amount: float
-    issued_at: datetime
-    product_name: str
-    product_price: float
-    order_created_at: datetime
+    total_amount: float  # Змінено з amount на total_amount
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+class InvoiceDetailed(BaseModel):
+    id: int
+    order_id: int
+    total_amount: float  # Змінено з amount на total_amount
+    discount: float
+    discount_display: Optional[str] = None
+    order_created_at: datetime
+    paid_at: Optional[datetime]
+    product_name: str
+    product_price: float
 
+    class Config:
+        from_attributes = True
 
+# ---------- AUTH ----------
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -86,3 +85,5 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
+    class Config:
+        from_attributes = True

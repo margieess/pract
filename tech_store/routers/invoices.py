@@ -10,20 +10,18 @@ router = APIRouter(
     tags=["invoices"],
 )
 
-@router.post("/", response_model=schemas.Invoice)
+@router.post("/", response_model=schemas.InvoiceDetailed)
 def create_invoice(
     invoice: schemas.InvoiceCreate,
     db: Session = Depends(get_db),
-    current_user: schemas.User = Depends(require_role("cashier"))
+    current_user: schemas.User = Depends(require_role("cashier"))  # Змінено на "accountant"
 ):
     db_invoice = crud.create_invoice(db=db, invoice=invoice)
     if not db_invoice:
         raise HTTPException(status_code=400, detail="Order not found or not processed")
     return db_invoice
 
-
-
-@router.get("/", response_model=List[schemas.Invoice])
+@router.get("/", response_model=List[schemas.InvoiceDetailed])
 def read_invoices(
     skip: int = 0,
     limit: int = 100,
@@ -32,5 +30,4 @@ def read_invoices(
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(require_role("accountant"))
 ):
-    return crud.get_invoices(db=db, skip=skip, limit=limit, start_date=start_date, end_date=end_date)
-
+    return crud.get_invoices(db, skip=skip, limit=limit, start_date=start_date, end_date=end_date)

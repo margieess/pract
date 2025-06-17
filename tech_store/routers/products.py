@@ -26,4 +26,3 @@ def read_product(product_id: int, db: Session = Depends(get_db)):
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
-

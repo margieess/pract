@@ -1,12 +1,11 @@
 from fastapi import FastAPI
-from .database import engine
-from . import models
 from .routers import auth, products, orders, invoices
-from .fixtures import load_fixtures  # <-- імпортуємо
+from .fixtures import load_fixtures
+from .database import engine
+from .models import Base
 
-
-# Створення таблиць у базі даних (якщо їх ще немає)
-models.Base.metadata.create_all(bind=engine)
+# Створення таблиць у базі даних
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -18,9 +17,8 @@ app.include_router(invoices.router)
 
 @app.on_event("startup")
 def startup_event():
-    load_fixtures()  # <-- викликаємо при старті сервера
+    load_fixtures()
 
 @app.get("/")
 def read_root():
     return {"message": "Tech Store API"}
-
