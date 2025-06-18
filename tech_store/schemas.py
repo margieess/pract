@@ -22,32 +22,29 @@ class Product(ProductBase):
         from_attributes = True
 
 
-class UserBase(BaseModel):
+class UserCreate(BaseModel):
     username: str
     role: str
-
-class UserCreate(UserBase):
     password: str
-    full_name: Optional[str] = None
-    email: Optional[str] = None
 
-class User(UserBase):
+class User(BaseModel):
     id: int
-    is_active: Optional[bool]
+    username: str
+    role: str
+    is_active: Optional[bool] = True
 
     class Config:
         orm_mode = True
         from_attributes = True
 
 
-class OrderBase(BaseModel):
+class OrderCreate(BaseModel):
     product_id: int
-
-class OrderCreate(OrderBase):
     consultant_id: Optional[int] = None
 
-class Order(OrderBase):
+class Order(BaseModel):
     id: int
+    product_id: int
     quantity: int
     status: str
     created_at: datetime
@@ -73,6 +70,7 @@ class Invoice(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
 
 class InvoiceDetailed(BaseModel):
     id: int
@@ -101,3 +99,4 @@ class TokenData(BaseModel):
     class Config:
         orm_mode = True
         from_attributes = True
+
