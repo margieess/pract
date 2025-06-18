@@ -25,14 +25,14 @@ def get_db():
     finally:
         db.close()
 
-def verify_password(plain_password: str, hashed_password: str):
-    return plain_password == hashed_password  # plain text comparison
+def verify_password(plain_password: str, password: str):
+    return plain_password == password  # plain text comparison
 
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password):
         return False
     return user
 

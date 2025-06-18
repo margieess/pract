@@ -12,6 +12,7 @@ class ProductCreate(ProductBase):
 
 class Product(ProductBase):
     id: int
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -22,7 +23,9 @@ class UserBase(BaseModel):
     role: str
 
 class UserCreate(UserBase):
-    password: str  # plain text password
+    password: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
 
 class User(UserBase):
     id: int
@@ -36,10 +39,11 @@ class OrderBase(BaseModel):
     product_id: int
 
 class OrderCreate(OrderBase):
-    pass
+    consultant_id: Optional[int] = None
 
 class Order(OrderBase):
     id: int
+    quantity: int
     status: str
     created_at: datetime
     processed_at: Optional[datetime]
@@ -53,12 +57,12 @@ class Order(OrderBase):
 # ---------- INVOICES ----------
 class InvoiceCreate(BaseModel):
     order_id: int
-    # total_amount: Optional[float] = None  # Додайте, якщо потрібно передавати суму
 
 class Invoice(BaseModel):
     id: int
     order_id: int
-    total_amount: float  # Змінено з amount на total_amount
+    total_amount: float
+    issued_at: datetime
 
     class Config:
         from_attributes = True
@@ -66,7 +70,8 @@ class Invoice(BaseModel):
 class InvoiceDetailed(BaseModel):
     id: int
     order_id: int
-    total_amount: float  # Змінено з amount на total_amount
+    total_amount: float
+    issued_at: datetime
     discount: float
     discount_display: Optional[str] = None
     order_created_at: datetime

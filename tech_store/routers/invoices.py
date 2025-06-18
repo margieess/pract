@@ -14,7 +14,7 @@ router = APIRouter(
 def create_invoice(
     invoice: schemas.InvoiceCreate,
     db: Session = Depends(get_db),
-    current_user: schemas.User = Depends(require_role("cashier"))  # Змінено на "accountant"
+    current_user: schemas.User = Depends(require_role("cashier"))
 ):
     db_invoice = crud.create_invoice(db=db, invoice=invoice)
     if not db_invoice:

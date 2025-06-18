@@ -1,47 +1,74 @@
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
+from fastapi import HTTPException
 from . import models, schemas
+from datetime import datetime, timezone
+from typing import Optional
 
-# ---------------- PRODUCTS ----------------
+# -------------------------
+# Допоміжна функція
+# -------------------------
+def calculate_discount(product: models.Product):
+    days_old = (datetime.now(timezone.utc) - product.created_at.replace(tzinfo=timezone.utc)).days
+    discount_value = 0.2 if days_old > 30 else 0.0
+    discounted_price = round(product.price * (1 - discount_value), 3)
+    return discount_value, discounted_price
+
+# -------------------------
+# Продукти
+# -------------------------
 def create_product(db: Session, product: schemas.ProductCreate):
-    db_product = models.Product(**product.dict())
+    db_product = models.Product(**product.dict(), created_at=datetime.now(timezone.utc))
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
     return db_product
 
-def get_product(db: Session, product_id: int):
-    return db.query(models.Product).filter(models.Product.id == product_id).first()
-
 def get_products(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Product).offset(skip).limit(limit).all()
 
-# ---------------- USERS ----------------
+def get_product(db: Session, product_id: int):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+# -------------------------
+# Користувачі
+# -------------------------
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         username=user.username,
-        hashed_password=user.password,  # plain text (рекомендується змінити на bcrypt)
-        role=user.role,
-        is_active=True
+        full_name=user.full_name,
+        email=user.email,
+        password=user.password,
+        role=user.role
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
-def get_user_by_username(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
-
 def get_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
-# ---------------- ORDERS ----------------
+def get_users(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.User).offset(skip).limit(limit).all()
+
+# -------------------------
+# Замовлення
+# -------------------------
 def create_order(db: Session, order: schemas.OrderCreate, cashier_id: int):
+    product = get_product(db, order.product_id)
     db_order = models.Order(
-        product_id=order.product_id,
-        created_at=datetime.now(timezone.utc),
+        product_id=product.id,
+        quantity=1,  # Жорстко задаємо quantity=1
         status="created",
-        cashier_id=cashier_id
+        created_at=datetime.now(timezone.utc),
+        cashier_id=cashier_id,
+        consultant_id=order.consultant_id
     )
     db.add(db_order)
     db.commit()
@@ -51,86 +78,147 @@ def create_order(db: Session, order: schemas.OrderCreate, cashier_id: int):
 def get_orders(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Order).offset(skip).limit(limit).all()
 
+def get_order(db: Session, order_id: int):
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
 def process_order(db: Session, order_id: int, user_id: int):
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
-    if not order or order.status != "created":
-        return None
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order.status != "created":
+        raise HTTPException(status_code=400, detail="Order already processed or paid")
+    
     order.status = "processed"
+    order.processed_by = user_id
     order.processed_at = datetime.now(timezone.utc)
-    order.consultant_id = user_id
     db.commit()
     db.refresh(order)
     return order
 
 def pay_order(db: Session, order_id: int):
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    
     if not order or order.status != "processed":
         return None
+
     order.status = "paid"
     order.paid_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(order)
     return order
 
-# ---------------- INVOICES ----------------
+# -------------------------
+# Рахунки
+# -------------------------
 def create_invoice(db: Session, invoice: schemas.InvoiceCreate):
-    db_order = db.query(models.Order).filter(models.Order.id == invoice.order_id).first()
-    if not db_order or db_order.status != "processed":
-        return None
+    order = db.query(models.Order).filter(models.Order.id == invoice.order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if order.status != "processed":
+        raise HTTPException(status_code=400, detail="Order must be processed before invoicing")
 
-    product = db_order.product
-    days_old = (datetime.now(timezone.utc) - product.created_at.replace(tzinfo=timezone.utc)).days
-    discount_value = 0.2 if days_old > 30 else 0.0
-    total_amount = round(product.price * (1 - discount_value), 3)
+    existing_invoice = db.query(models.Invoice).filter(models.Invoice.order_id == invoice.order_id).first()
+    if existing_invoice:
+        raise HTTPException(status_code=400, detail="Invoice already exists")
 
-    db_invoice = models.Invoice(
-        order_id=invoice.order_id,
-        total_amount=total_amount
+    product = get_product(db, order.product_id)
+    discount_value, discounted_price = calculate_discount(product)
+    total_amount = discounted_price  # quantity=1, тому total_amount = discounted_price
+
+    new_invoice = models.Invoice(
+        order_id=order.id,
+        total_amount=total_amount,
+        issued_at=datetime.now(timezone.utc)
     )
-    db.add(db_invoice)
+    db.add(new_invoice)
     db.commit()
-    db.refresh(db_invoice)
+    db.refresh(new_invoice)
 
-    return {
-        "id": db_invoice.id,
-        "order_id": db_order.id,
-        "total_amount": total_amount,
-        "discount": discount_value,  # Залишаємо як float (0.2 або 0.0)
-        "discount_display": f"{int(discount_value * 100)}%" if discount_value > 0 else "0%",  # Нове поле для відображення
-        "order_created_at": db_order.created_at,
-        "paid_at": db_order.paid_at,
-        "product_name": product.name,
-        "product_price": product.price
-    }
+    invoice_detailed = schemas.InvoiceDetailed(
+        id=new_invoice.id,
+        order_id=new_invoice.order_id,
+        total_amount=new_invoice.total_amount,
+        issued_at=new_invoice.issued_at,
+        discount=discount_value,
+        discount_display=f"{discount_value*100:.0f}%",
+        order_created_at=order.created_at,
+        paid_at=order.paid_at,
+        product_name=product.name,
+        product_price=product.price
+    )
+    return invoice_detailed
 
-def get_invoices(db: Session, skip: int = 0, limit: int = 100, start_date=None, end_date=None):
-    query = db.query(models.Invoice).join(models.Order).join(models.Product)
+def get_invoices(db: Session, skip: int = 0, limit: int = 100, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None):
+    query = db.query(models.Invoice)
+    if start_date:
+        query = query.filter(models.Invoice.issued_at >= start_date)
+    if end_date:
+        query = query.filter(models.Invoice.issued_at <= end_date)
+    invoices = query.offset(skip).limit(limit).all()
 
-    if start_date and end_date:
-        query = query.filter(
-            models.Order.created_at >= start_date,
-            models.Order.created_at <= end_date
-        )
-
-    results = query.offset(skip).limit(limit).all()
-
-    detailed = []
-    for inv in results:
-        product = inv.order.product
-        order = inv.order
-        days_old = (datetime.now(timezone.utc) - product.created_at.replace(tzinfo=timezone.utc)).days
-        discount_value = 0.2 if days_old > 30 else 0.0
-        total_amount = round(product.price * (1 - discount_value), 3)
-
-        detailed.append(schemas.InvoiceDetailed(
+    result = []
+    for inv in invoices:
+        order = db.query(models.Order).filter(models.Order.id == inv.order_id).first()
+        if not order:
+            continue
+        product = get_product(db, order.product_id)
+        discount_value, discounted_price = calculate_discount(product)
+        
+        invoice_detailed = schemas.InvoiceDetailed(
             id=inv.id,
-            order_id=order.id,
-            total_amount=total_amount,
-            discount=discount_value,  # Залишаємо як float
-            discount_display=f"{int(discount_value * 100)}%" if discount_value > 0 else "0%",  # Нове поле
+            order_id=inv.order_id,
+            total_amount=inv.total_amount,
+            issued_at=inv.issued_at,
+            discount=discount_value,
+            discount_display=f"{discount_value*100:.0f}%",
             order_created_at=order.created_at,
             paid_at=order.paid_at,
             product_name=product.name,
             product_price=product.price
-        ))
-    return detailed
+        )
+        result.append(invoice_detailed)
+    
+    return result
+
+def get_invoice(db: Session, invoice_id: int):
+    invoice = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    order = db.query(models.Order).filter(models.Order.id == invoice.order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    product = get_product(db, order.product_id)
+    discount_value, discounted_price = calculate_discount(product)
+    
+    invoice_detailed = schemas.InvoiceDetailed(
+        id=invoice.id,
+        order_id=invoice.order_id,
+        total_amount=invoice.total_amount,
+        issued_at=invoice.issued_at,
+        discount=discount_value,
+        discount_display=f"{discount_value*100:.0f}%",
+        order_created_at=order.created_at,
+        paid_at=order.paid_at,
+        product_name=product.name,
+        product_price=product.price
+    )
+    return invoice_detailed
+
+def pay_invoice(db: Session, invoice_id: int):
+    invoice = get_invoice(db, invoice_id)
+    if invoice.paid_at:
+        raise HTTPException(status_code=400, detail="Invoice already paid")
+
+    order = db.query(models.Order).filter(models.Order.id == invoice.order_id).first()
+    order.status = "paid"
+    order.paid_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(order)
+    return get_invoice(db, invoice_id)

@@ -52,7 +52,7 @@ def load_fixtures():
         for u in users:
             user = User(
                 username=u["username"],
-                hashed_password=u["password"],  # plain text (рекомендується змінити на bcrypt)
+                password=u["password"],  # plain text (рекомендується змінити на bcrypt)
                 role=u["role"]
             )
             db.add(user)
