@@ -1,8 +1,6 @@
 """
 Pydantic-схеми для API системи управління замовленнями
 """
-
-
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -20,7 +18,8 @@ class Product(ProductBase):
     created_at: datetime
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -37,7 +36,8 @@ class User(UserBase):
     is_active: Optional[bool]
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
 
 
 class OrderBase(BaseModel):
@@ -57,7 +57,8 @@ class Order(OrderBase):
     consultant_id: Optional[int]
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
 
 
 class InvoiceCreate(BaseModel):
@@ -70,7 +71,8 @@ class Invoice(BaseModel):
     issued_at: datetime
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
 
 class InvoiceDetailed(BaseModel):
     id: int
@@ -85,7 +87,8 @@ class InvoiceDetailed(BaseModel):
     product_price: float
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):
@@ -96,4 +99,5 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
     class Config:
-        orm_mode  = True
+        orm_mode = True
+        from_attributes = True
