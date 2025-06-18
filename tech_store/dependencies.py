@@ -1,3 +1,7 @@
+"""
+модуль автентифікації та авторизації користувачів із використанням jwt у FastAPI.
+"""
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -7,10 +11,6 @@ from typing import Optional
 from . import models, schemas
 from .database import SessionLocal
 import os
-
-
-# Завантажуємо змінні з .env
-
 
 SECRET_KEY = os.getenv("SECRET_KEY", "u8P4B0xqVWfl3NyZsQ7RL5Mdn1tXH9EwKJeOcvgrDZAhpIUR")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -26,7 +26,7 @@ def get_db():
         db.close()
 
 def verify_password(plain_password: str, password: str):
-    return plain_password == password  # plain text comparison
+    return plain_password == password 
 
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(models.User).filter(models.User.username == username).first()

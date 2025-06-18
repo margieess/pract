@@ -1,3 +1,10 @@
+"""
+роутер для роботи із замовленнями оrders
+
+касир може створювати та оплачувати замовлення
+консультант може опрацьовувати замовлення зі статусом created
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session

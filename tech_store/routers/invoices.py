@@ -1,9 +1,17 @@
+"""
+роутер для роботи з рахунками 
+
+створення рахунку касиром
+отримання бухгалтером списку рахунків з опціональним фільтром за датою 
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Optional
 from .. import schemas, crud
 from ..dependencies import get_db, require_role
+
 
 router = APIRouter(
     prefix="/invoices",
@@ -25,8 +33,8 @@ def create_invoice(
 def read_invoices(
     skip: int = 0,
     limit: int = 100,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(require_role("accountant"))
 ):

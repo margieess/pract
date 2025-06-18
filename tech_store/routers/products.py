@@ -1,3 +1,11 @@
+"""
+для роботи з продуктами магазину
+
+отримання списку продуктів 
+
+"""
+
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from .. import schemas, crud

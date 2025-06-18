@@ -1,8 +1,13 @@
+"""
+Pydantic-схеми для API системи управління замовленнями
+"""
+
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-# ---------- PRODUCTS ----------
+
 class ProductBase(BaseModel):
     name: str
     price: float
@@ -15,9 +20,9 @@ class Product(ProductBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
 
-# ---------- USERS ----------
+
 class UserBase(BaseModel):
     username: str
     role: str
@@ -32,9 +37,9 @@ class User(UserBase):
     is_active: Optional[bool]
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
 
-# ---------- ORDERS ----------
+
 class OrderBase(BaseModel):
     product_id: int
 
@@ -52,9 +57,9 @@ class Order(OrderBase):
     consultant_id: Optional[int]
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
 
-# ---------- INVOICES ----------
+
 class InvoiceCreate(BaseModel):
     order_id: int
 
@@ -65,7 +70,7 @@ class Invoice(BaseModel):
     issued_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
 
 class InvoiceDetailed(BaseModel):
     id: int
@@ -80,9 +85,9 @@ class InvoiceDetailed(BaseModel):
     product_price: float
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
 
-# ---------- AUTH ----------
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -91,4 +96,4 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
     class Config:
-        from_attributes = True
+        orm_mode  = True
